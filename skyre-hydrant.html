@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ATProto Firehose JP/EN</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #f0eacc;
+            display: flex;
+            flex-direction: column;
+        }
+        #explain {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+
+        }
+
+        #post-board {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: cornsilk;
+            overflow-y: auto;
+            flex-grow: 1;
+        }
+        .post {
+            display: flex;
+            flex-direction: column;
+            margin: 10px;
+            padding: 5px 10px;
+            border: 1px solid #37378440;
+            border-radius: 5px;
+            background-color: white;
+            width: 800px;
+            max-width: 90%;
+            box-shadow: 2px -3px 5px 2px rgba(149, 149, 149, 0.31);
+        }
+        .post-title, .post-footer {
+            display: flex;
+            font-size: 12px;
+            color: #444;
+            justify-content: space-between;
+        }
+        .post-title {
+            border-bottom: 1px solid #ececec;
+            margin-bottom: 6px;
+            padding-bottom: 2px;
+        }
+        .post-footer{
+            border-top: 1px solid #ececec;
+            margin-top: 6px;
+            padding-top: 2px;
+        }
+        .post-text {
+            padding: 6px 0px;
+            font-size: 18px;
+            overflow-x: auto;
+            margin: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div id="explain">
+        <p><b>ATProto Firehose JP/EN Filter</b></p>
+        <p>An ATProto firehose demo that filters posts that contain both Japanese and English text. Filtering logic is extremely naive and doesn't work. Better language detection is absolutely not worth the effort. This idea sucks, but it was fun to make.</p>
+        <div class="controls">
+            <button id="connect">Connect</button>
+            <button id="disconnect">Disconnect</button>
+        </div>
+    </div>
+
+    <div id="post-board"></div>
+    <template id='post-template'>
+        <div class="post">
+            <div class="post-title">
+                <div class="post-did">DID</div>
+                <div class="post-timestamp">Timestamp</div>
+            </div>
+            <div class="post-text">Post Text</div>
+            <div class="post-footer">
+                <div class="post-langs">Languages</div>
+                <div class="post-tags">Hashtags</div>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        let ws = null;
+        const board = document.getElementById('post-board');
+        const template = document.querySelector('#post-template').content.querySelector('.post');
+        const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
+
+        function process(data) {
+            if (data.commit && data.commit.record && data.commit.record.text) {
+                let post = data.commit;
+
+                let text = post.record.text;
+                let foundJP = 0;
+                let foundEN = 0;
+                for (let i = 0; i < text.length; i++) {
+                    if (text.charCodeAt(i) >= 0x0061 && text.charCodeAt(i) <= 0x007A) {
+                        foundEN++;
+                    }
+                    if (text.charCodeAt(i) >= 0x3041 && text.charCodeAt(i) <= 0x309F) {
+                        foundJP++;
+                    }
+                }
+
+                if (foundJP && foundEN) {
+                    console.log(text);
+                    console.log('JP:' + foundJP);
+                    console.log("EN:" + foundEN);
+                    console.log("jp/en: " + (foundJP / foundEN));
+                    console.log("en/jp: " +  (foundEN / foundJP));
+
+                    // Timestamp
+                    let ts = new Date(data.time_us/1000);
+                    let dateFmt = ts.toLocaleDateString('en-US', {
+                        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                        hour: 'numeric', minute: 'numeric', second: 'numeric'});
+
+                    // Languages
+                    let langs = [];
+                    if (post.record.langs) {
+                        langs = post.record.langs.map((l) => {return langNames.of(l)});
+                    }
+
+                    // Hashtags
+                    let tags = [];
+                    if (post.record.facets) {
+                        tags = post.record.facets.map((f) => {
+                            if (f.features[0].$type == "app.bsky.richtext.facet#tag") {
+                                return '#' + f.features[0].tag;
+                            }
+                        })
+                    }
+
+                    return {
+                        'did': data.did,
+                        'text': text,
+                        'timestamp': dateFmt,
+                        'langs': langs.join(', '),
+                        'tags': tags.join(' ')
+
+                    };
+                }
+
+            }
+            return null;
+        }
+
+        function make_post(data) {
+            let node = template.cloneNode(true);
+            node.querySelector('.post-did').textContent = 'User: ' + data.did;
+            node.querySelector('.post-timestamp').textContent = data.timestamp;
+            node.querySelector('.post-text').textContent = data.text;
+            node.querySelector('.post-langs').textContent = data.langs;
+            node.querySelector('.post-tags').textContent = data.tags;
+            board.append(node);
+            board.scrollTo({'top': board.scrollHeight});
+        }
+
+        function connect() {
+            if (ws) {
+                console.log('Already connected!');
+                return;
+            }
+
+            try {
+                ws = new WebSocket('wss://jetstream2.us-west.bsky.network/subscribe?wantedCollections=app.bsky.feed.post');
+
+                ws.onopen = () => {
+                    console.log('Connected to Bluesky WebSocket');
+                };
+
+                ws.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        let post = process(data);
+                        if (post) {
+                            make_post(post);
+                            console.log(data);
+                        }
+                    } catch (e) {
+                        debugger;
+                    }
+                };
+
+                ws.onerror = (error) => {
+                    console.log(`WebSocket Error: ${error.message}`);
+                };
+
+                ws.onclose = () => {
+                    console.log('Disconnected from Bluesky WebSocket');
+                    ws = null;
+                };
+
+            } catch (error) {
+                console.log(`Connection Error: ${error.message}`);
+                ws = null;
+            }
+        }
+
+        function disconnect() {
+            if (ws) {
+                ws.close();
+                ws = null;
+                console.log('Disconnected by user');
+            } else {
+                console.log('Not connected');
+            }
+        }
+
+        // Event Listeners
+        document.getElementById('connect').addEventListener('click', connect);
+        document.getElementById('disconnect').addEventListener('click', disconnect);
+    </script>
+</body>
+</html>
