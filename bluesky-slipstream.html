@@ -2,9 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>ATProto Firehose JP/EN</title>
+    <title>BlueSky Firehose Filter</title>
     <style>
-        html, body {
+        html {
+            height: 100%;
+        }
+        body {
             height: 100%;
             margin: 0;
             padding: 0;
@@ -30,7 +33,7 @@
         .post {
             display: flex;
             flex-direction: column;
-            margin: 10px;
+            margin: 5px;
             padding: 5px 10px;
             border: 1px solid #37378440;
             border-radius: 5px;
@@ -59,7 +62,10 @@
             padding: 6px 0px;
             font-size: 18px;
             overflow-x: auto;
-            margin: 8px;
+            margin: 4px;
+        }
+        .match {
+            background-color: yellow;
         }
     </style>
 </head>
@@ -93,30 +99,20 @@
         const board = document.getElementById('post-board');
         const template = document.querySelector('#post-template').content.querySelector('.post');
         const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
+        let regEx = new RegExp(".*");
+
 
         function process(data) {
             if (data.commit && data.commit.record && data.commit.record.text) {
                 let post = data.commit;
-
                 let text = post.record.text;
-                let foundJP = 0;
-                let foundEN = 0;
-                for (let i = 0; i < text.length; i++) {
-                    if (text.charCodeAt(i) >= 0x0061 && text.charCodeAt(i) <= 0x007A) {
-                        foundEN++;
-                    }
-                    if (text.charCodeAt(i) >= 0x3041 && text.charCodeAt(i) <= 0x309F) {
-                        foundJP++;
-                    }
-                }
+                let keywords = '世界'.split(/\s+/);
 
-                if (foundJP && foundEN) {
-                    console.log(text);
-                    console.log('JP:' + foundJP);
-                    console.log("EN:" + foundEN);
-                    console.log("jp/en: " + (foundJP / foundEN));
-                    console.log("en/jp: " +  (foundEN / foundJP));
+                // Gotta find 'em all (for a match)
+                let keywordsFound = 0;
+                keywords.forEach(kw => text.includes(kw) ? keywordsFound++:1);
 
+                if (keywordsFound == keywords.length) {
                     // Timestamp
                     let ts = new Date(data.time_us/1000);
                     let dateFmt = ts.toLocaleDateString('en-US', {
@@ -128,6 +124,7 @@
                     if (post.record.langs) {
                         langs = post.record.langs.map((l) => {return langNames.of(l)});
                     }
+                    langs.join(', ');
 
                     // Hashtags
                     let tags = [];
@@ -138,13 +135,27 @@
                             }
                         })
                     }
+                    tags = tags.join(' ');
+
+                    // Highlight matches
+                    if (keywords) {
+                        keywords.forEach((kw) => {
+                            if (!kw) return;
+
+                            // In text
+                            let re = new RegExp(`(${kw})`, 'dgi');
+                            text = text.replace(re, '<span class="match">$1</span>');
+                            // In tags
+                            tags = tags.replace(re, '<span class="match">$1</span>');
+                        })
+                    }
 
                     return {
                         'did': data.did,
                         'text': text,
                         'timestamp': dateFmt,
-                        'langs': langs.join(', '),
-                        'tags': tags.join(' ')
+                        'langs': langs,
+                        'tags': tags
 
                     };
                 }
@@ -157,9 +168,9 @@
             let node = template.cloneNode(true);
             node.querySelector('.post-did').textContent = 'User: ' + data.did;
             node.querySelector('.post-timestamp').textContent = data.timestamp;
-            node.querySelector('.post-text').textContent = data.text;
+            node.querySelector('.post-text').innerHTML = data.text;
             node.querySelector('.post-langs').textContent = data.langs;
-            node.querySelector('.post-tags').textContent = data.tags;
+            node.querySelector('.post-tags').innerHTML = data.tags;
             board.append(node);
             board.scrollTo({'top': board.scrollHeight});
         }
