@@ -148,7 +148,8 @@
 
                 // Gotta find 'em all (for a match)
                 let keywordsFound = 0;
-                keywords.forEach(kw => text.includes(kw) ? keywordsFound++:1);
+                let tlc = text.toLowerCase();
+                keywords.forEach(kw => tlc.includes(kw.toLowerCase()) ? keywordsFound++:1);
 
                 if (keywordsFound == keywords.length) {
                     // Timestamp
