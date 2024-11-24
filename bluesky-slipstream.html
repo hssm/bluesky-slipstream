@@ -31,6 +31,7 @@
             flex-grow: 1;
         }
         .post {
+            position: relative;
             display: flex;
             flex-direction: column;
             margin: 5px;
@@ -64,6 +65,15 @@
             overflow-x: auto;
             margin: 4px;
         }
+        .post-count {
+            position: absolute;
+            left: -2em;
+            bottom: 4px;
+            color: #ddd;
+            font-size: 14px;
+            user-select: none;
+            display: none;
+        }
         .match {
             background-color: yellow;
         }
@@ -82,6 +92,7 @@
     <div id="post-board"></div>
     <template id='post-template'>
         <div class="post">
+            <div class="post-count"></div>
             <div class="post-title">
                 <div class="post-did">DID</div>
                 <div class="post-timestamp">Timestamp</div>
@@ -100,13 +111,13 @@
         const template = document.querySelector('#post-template').content.querySelector('.post');
         const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
         let regEx = new RegExp(".*");
-
+        let total = 0;
 
         function process(data) {
             if (data.commit && data.commit.record && data.commit.record.text) {
                 let post = data.commit;
                 let text = post.record.text;
-                let keywords = '世界'.split(/\s+/);
+                let keywords = 'left'.split(/\s+/);
 
                 // Gotta find 'em all (for a match)
                 let keywordsFound = 0;
@@ -141,7 +152,6 @@
                     if (keywords) {
                         keywords.forEach((kw) => {
                             if (!kw) return;
-
                             // In text
                             let re = new RegExp(`(${kw})`, 'dgi');
                             text = text.replace(re, '<span class="match">$1</span>');
@@ -155,8 +165,8 @@
                         'text': text,
                         'timestamp': dateFmt,
                         'langs': langs,
-                        'tags': tags
-
+                        'tags': tags,
+                        'count': ++total
                     };
                 }
 
@@ -166,6 +176,7 @@
 
         function make_post(data) {
             let node = template.cloneNode(true);
+            node.querySelector('.post-count').textContent = data.count;
             node.querySelector('.post-did').textContent = 'User: ' + data.did;
             node.querySelector('.post-timestamp').textContent = data.timestamp;
             node.querySelector('.post-text').innerHTML = data.text;
