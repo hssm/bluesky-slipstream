@@ -53,6 +53,22 @@
             overflow-y: auto;
             flex-grow: 1;
         }
+        #latch-indicator {
+            position: fixed;
+            margin-right: 900px;
+            bottom: 28px;
+            font-size: 45px;
+            text-decoration: underline;
+            cursor: pointer;
+            color: #647964;
+            display: none;
+        }
+        #latch-indicator[latched=yes] {
+            display: none;
+        }
+        #latch-indicator[latched=no] {
+            display: block;
+        }
         .post {
             position: relative;
             display: flex;
@@ -116,7 +132,9 @@
         </div>
     </div>
 
-    <div id="post-board"></div>
+    <div id="post-board">
+        <div id="latch-indicator">▼</div>
+    </div>
     <template id='post-template'>
         <div class="post">
             <div class="post-count"></div>
@@ -136,9 +154,11 @@
         let ws = null;
         const board = document.getElementById('post-board');
         const template = document.querySelector('#post-template').content.querySelector('.post');
+        const latcher = document.getElementById("latch-indicator");
         const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
         let regEx = new RegExp(".*");
         let total = 0;
+        let latched = true;
 
         function process(data) {
             if (data.commit && data.commit.record && data.commit.record.text) {
@@ -202,6 +222,36 @@
             return null;
         }
 
+
+        // Scroll event determines if we latch or unlatch and show indicator
+        function onScroll(event) {
+            var position = board.scrollTop + board.clientHeight;
+            var lengthWithOffset = board.scrollHeight - 50;
+            if (position >= lengthWithOffset) {
+                // Only touch DOM if something changed. This event is very frequent.
+                if (!latched) {
+                    latcher.setAttribute('latched', 'yes');
+                }
+                latched = true;
+            } else {
+                if (latched) {
+                    latcher.setAttribute('latched', 'no');
+                }
+                latched = false;
+            }
+        }
+        function scrollToBottom() {
+            board.scrollTo({'top': board.scrollHeight});
+        }
+
+        function latch() {
+            var position = board.scrollTop + board.clientHeight;
+            var lengthWithOffset = board.scrollHeight - 450;
+            if (position >= lengthWithOffset) {
+                scrollToBottom();
+            }
+        }
+
         function make_post(data) {
             let node = template.cloneNode(true);
             node.querySelector('.post-count').textContent = data.count;
@@ -211,7 +261,9 @@
             node.querySelector('.post-langs').textContent = data.langs;
             node.querySelector('.post-tags').innerHTML = data.tags;
             board.append(node);
-            board.scrollTo({'top': board.scrollHeight});
+            if (latched) {
+                scrollToBottom();
+            }
         }
 
         function connect() {
@@ -279,6 +331,9 @@
 
         // Event Listeners
         document.getElementById('start').addEventListener('click', start);
+        board.addEventListener("scroll", onScroll);
+        latcher.addEventListener('click', scrollToBottom);
+
     </script>
 </body>
 </html>
