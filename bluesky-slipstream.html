@@ -72,6 +72,35 @@
             overflow-y: auto;
             flex-grow: 1;
         }
+        #streaming-indicator[started=no] {
+            display: none;
+        }
+        #streaming-indicator[started=yes] {
+            display: inline;
+        }
+        #streaming-indicator {
+            position: absolute;
+            right: 30px;
+            color: #666;
+            font-size: 50px;
+            margin-top: -15px;
+        }
+        #streaming-indicator:after {
+            display: inline;
+            vertical-align: middle;
+            animation: streaming steps(1, end) 0.5s infinite;
+            content: '';
+        }
+        @keyframes streaming {
+            0%   { content: '\00a0\00a0\00a0' ; }
+            15%   { content: '.\00a0\00a0' ; }
+            30%  { content: '..\00a0'; }
+            45%  { content: '...'; }
+            60%  { content: '\00a0..'; }
+            75% { content: '\00a0\00a0.'; }
+            100% { content: '\00a0\00a0\00a0'; }
+        }
+
         #latch-indicator {
             position: fixed;
             margin-right: 900px;
@@ -155,6 +184,7 @@
     </div>
 
     <div id="post-board">
+        <div id="streaming-indicator" started="no"></div>
         <div id="latch-indicator">▼</div>
     </div>
     <template id='post-template'>
@@ -178,6 +208,7 @@
         const board = document.getElementById('post-board');
         const template = document.querySelector('#post-template').content.querySelector('.post');
         const latcher = document.getElementById("latch-indicator");
+        const streamer = document.getElementById('streaming-indicator');
         const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
         const counter = document.getElementById('total');
         let total = 0;
@@ -297,7 +328,7 @@
                 console.log('Already connected!');
                 return;
             }
-
+            streamer.setAttribute('started', 'yes');
             try {
                 ws = new WebSocket('wss://jetstream2.us-west.bsky.network/subscribe?wantedCollections=app.bsky.feed.post');
 
@@ -337,6 +368,7 @@
                 ws.close();
                 ws = null;
                 console.log('Disconnected by user');
+                streamer.setAttribute('started', 'no');
             } else {
                 console.log('Not connected');
             }
