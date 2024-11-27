@@ -174,6 +174,7 @@
 
     <script>
         let ws = null;
+        const kwInput = document.getElementById('keywords');
         const board = document.getElementById('post-board');
         const template = document.querySelector('#post-template').content.querySelector('.post');
         const latcher = document.getElementById("latch-indicator");
@@ -186,7 +187,7 @@
             if (data.commit && data.commit.record && data.commit.record.text) {
                 let post = data.commit;
                 let text = post.record.text;
-                let keywords = document.getElementById("keywords").value.split(/\s+/);
+                let keywords = kwInput.value.split(/\s+/);
 
                 // Gotta find 'em all (for a match)
                 let keywordsFound = 0;
@@ -356,15 +357,25 @@
         }
 
         // Event Listeners
-        document.getElementById("keywords").addEventListener('keydown', (event) => {
+        kwInput.addEventListener('keydown', (event) => {
             if (!ws && event.key === 'Enter') {
                 start();
             }
         })
         document.getElementById('start').addEventListener('click', start);
         document.getElementById('clear').addEventListener('click', clear);
-        board.addEventListener("scroll", onScroll);
+        board.addEventListener('scroll', onScroll);
         latcher.addEventListener('click', scrollToBottom);
+
+
+        // Auto start with URL params
+        let params = new URLSearchParams(document.location.search);
+        let q = params.get('q');
+        if (q) {
+            kwInput.setAttribute('value', q);
+            start();
+        }
+
 
     </script>
 </body>
