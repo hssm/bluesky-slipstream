@@ -48,6 +48,12 @@
             width: 40px;
             justify-content: center;
         }
+        #start[started=no] {
+            background-color: #e1ffe1;
+        }
+        #start[started=yes] {
+            background-color: #f9bcbc;
+        }
         #total {
             min-width: 3em;
             display: inline-block;
@@ -135,7 +141,7 @@
             <div id="filter">
                 <input id="keywords" type='text' autocomplete="off"></input>
             </div>
-            <div id="start" class="button">Start</div>
+            <div id="start" class="button" started="no">Start</div>
             <div id="clear" class="button">Clear</div>
             <div>&nbsp;&nbsp;Posts: <span id='total'>0</span></div>
         </div>
@@ -332,15 +338,22 @@
             } else {
                 connect();
                 document.getElementById('start').textContent = 'Stop';
+                document.getElementById('start').setAttribute('started', 'yes');
             }
 
         }
         function stop() {
             disconnect();
             document.getElementById('start').textContent = 'Start';
+            document.getElementById('start').setAttribute('started', 'no');
         }
 
         // Event Listeners
+        document.getElementById("keywords").addEventListener('keydown', (event) => {
+            if (!ws && event.key === 'Enter') {
+                start();
+            }
+        })
         document.getElementById('start').addEventListener('click', start);
         document.getElementById('clear').addEventListener('click', clear);
         board.addEventListener("scroll", onScroll);
