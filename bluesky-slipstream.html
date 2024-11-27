@@ -33,8 +33,9 @@
             border-radius: 3px;
             border: 1px solid #ccc;
             width: 250px;
+            margin-left: 3em;
         }
-        #start {
+        .button {
             border: none;
             border-radius: 5px;
             padding: 0px 10px;
@@ -44,6 +45,12 @@
             display: flex;
             align-items: center;
             background-color: white;
+            width: 40px;
+            justify-content: center;
+        }
+        #total {
+            min-width: 3em;
+            display: inline-block;
         }
         #post-board {
             display: flex;
@@ -128,7 +135,9 @@
             <div id="filter">
                 <input id="keywords" type='text' autocomplete="off"></input>
             </div>
-            <div id="start">Start</div>
+            <div id="start" class="button">Start</div>
+            <div id="clear" class="button">Clear</div>
+            <div>&nbsp;&nbsp;Posts: <span id='total'>0</span></div>
         </div>
     </div>
 
@@ -156,7 +165,7 @@
         const template = document.querySelector('#post-template').content.querySelector('.post');
         const latcher = document.getElementById("latch-indicator");
         const langNames = new Intl.DisplayNames(['en'], {type: 'language'});
-        let regEx = new RegExp(".*");
+        const counter = document.getElementById('total');
         let total = 0;
         let latched = true;
 
@@ -244,14 +253,8 @@
             board.scrollTo({'top': board.scrollHeight});
         }
 
-        function latch() {
-            var position = board.scrollTop + board.clientHeight;
-            var lengthWithOffset = board.scrollHeight - 450;
-            if (position >= lengthWithOffset) {
-                scrollToBottom();
-            }
-        }
 
+        // Add a post to the board
         function make_post(data) {
             let node = template.cloneNode(true);
             node.querySelector('.post-count').textContent = data.count;
@@ -261,9 +264,17 @@
             node.querySelector('.post-langs').textContent = data.langs;
             node.querySelector('.post-tags').innerHTML = data.tags;
             board.append(node);
+            counter.textContent = total;
             if (latched) {
                 scrollToBottom();
             }
+        }
+
+        // Remove all posts from the board
+        function clear() {
+            board.innerHTML = '';
+            total = 0;
+            counter.textContent = total;
         }
 
         function connect() {
@@ -331,6 +342,7 @@
 
         // Event Listeners
         document.getElementById('start').addEventListener('click', start);
+        document.getElementById('clear').addEventListener('click', clear);
         board.addEventListener("scroll", onScroll);
         latcher.addEventListener('click', scrollToBottom);
 
