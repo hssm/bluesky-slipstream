@@ -73,31 +73,28 @@
             flex-grow: 1;
         }
         #streaming-indicator[started=no] {
-            display: none;
+            visibility: hidden;
         }
         #streaming-indicator[started=yes] {
-            display: inline;
+            visibility: show;
         }
         #streaming-indicator {
-            position: absolute;
-            right: 30px;
             color: #666;
-            font-size: 50px;
-            margin-top: -15px;
+            font-size: 1em;
         }
         #streaming-indicator:after {
             display: inline;
-            vertical-align: middle;
             animation: streaming steps(1, end) 0.5s infinite;
             content: '';
+            font-family: monospace;
         }
         @keyframes streaming {
             0%   { content: '\00a0\00a0\00a0' ; }
-            15%   { content: '.\00a0\00a0' ; }
-            30%  { content: '..\00a0'; }
-            45%  { content: '...'; }
-            60%  { content: '\00a0..'; }
-            75% { content: '\00a0\00a0.'; }
+            15%   { content: '•\00a0\00a0' ; }
+            30%  { content: '••\00a0'; }
+            45%  { content: '•••'; }
+            60%  { content: '\00a0••'; }
+            75% { content: '\00a0\00a0•'; }
             100% { content: '\00a0\00a0\00a0'; }
         }
 
@@ -180,11 +177,11 @@
             <div id="start" class="button" started="no">Start</div>
             <div id="clear" class="button">Clear</div>
             <div>&nbsp;&nbsp;Posts: <span id='total'>0</span></div>
+            <div id="streaming-indicator" started="no"></div>
         </div>
     </div>
 
     <div id="post-board">
-        <div id="streaming-indicator" started="no"></div>
         <div id="latch-indicator">▼</div>
     </div>
     <template id='post-template'>
@@ -354,24 +351,30 @@
 
                 ws.onclose = () => {
                     console.log('Disconnected from Bluesky WebSocket');
-                    ws = null;
+                    cleanup();
                 };
 
             } catch (error) {
                 console.log(`Connection Error: ${error.message}`);
-                ws = null;
+                cleanup();
             }
         }
 
         function disconnect() {
             if (ws) {
                 ws.close();
-                ws = null;
                 console.log('Disconnected by user');
-                streamer.setAttribute('started', 'no');
+                cleanup();
+
             } else {
                 console.log('Not connected');
             }
+        }
+        function cleanup() {
+            ws = null;
+            streamer.setAttribute('started', 'no');
+            document.getElementById('start').textContent = 'Start';
+            document.getElementById('start').setAttribute('started', 'no');
         }
         function start() {
             if (ws) {
