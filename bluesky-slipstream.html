@@ -143,6 +143,18 @@
             margin-top: 6px;
             padding-top: 2px;
         }
+        .post .butterfly {
+            height: 1em;
+            margin-top: 3px;
+            margin-right: 5px;
+        }
+        .post-link {
+            color: #444;
+            text-decoration-color: #bbb;
+        }
+        .post-timestamp {
+            margin-left: auto;
+        }
         .post-text {
             padding: 6px 0px;
             font-size: 18px;
@@ -188,7 +200,8 @@
         <div class="post">
             <div class="post-count"></div>
             <div class="post-title">
-                <div class="post-did">DID</div>
+                <img src="butterfly.png" class='butterfly'></img>
+                <a class="post-link">Link</a>
                 <div class="post-timestamp">Timestamp</div>
             </div>
             <div class="post-text">Post Text</div>
@@ -210,6 +223,7 @@
         const counter = document.getElementById('total');
         let total = 0;
         let latched = true;
+        let bskyUrl = 'http://bsky.app'
 
         function process(data) {
             if (data.commit && data.commit.record && data.commit.record.text) {
@@ -223,6 +237,9 @@
                 keywords.forEach(kw => tlc.includes(kw.toLowerCase()) ? keywordsFound++:1);
 
                 if (keywordsFound == keywords.length) {
+                    // Link to post on bsky
+                    let url = bskyUrl + '/profile/'+data.did+'/post/'+post.rkey;
+
                     // Timestamp
                     let ts = new Date(data.time_us/1000);
                     let dateFmt = ts.toLocaleDateString('en-US', {
@@ -260,7 +277,8 @@
                     }
 
                     return {
-                        'did': data.did,
+                        'url': url,
+                        'postcode': post.rkey,
                         'text': text,
                         'timestamp': dateFmt,
                         'langs': langs,
@@ -300,7 +318,8 @@
         function make_post(data) {
             let node = template.cloneNode(true);
             node.querySelector('.post-count').textContent = data.count;
-            node.querySelector('.post-did').textContent = 'User: ' + data.did;
+            node.querySelector('.post-link').setAttribute('href', data.url);
+            node.querySelector('.post-link').textContent = data.postcode;
             node.querySelector('.post-timestamp').textContent = data.timestamp;
             node.querySelector('.post-text').innerHTML = data.text;
             node.querySelector('.post-langs').textContent = data.langs;
