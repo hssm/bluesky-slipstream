@@ -3,12 +3,19 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <head>
     <meta charset="UTF-8">
-    <title>BlueSky Firehose Filter</title>
+    <link rel="icon" type="image/x-icon" href="favicon.png">
+    <title>Bluesky Slipstream</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+
     <style>
         html {
             height: 100%;
         }
         body {
+            font-family: "Noto Sans", sans-serif;
             height: 100%;
             margin: 0;
             padding: 0;
@@ -39,13 +46,16 @@
             border-radius: 3px;
             border: 1px solid #ccc;
             width: 250px;
-            margin-left: 3em;
+        }
+        #buttons {
+            display: flex;
         }
         .button {
             border: none;
             border-radius: 5px;
             padding: 0px 10px;
-            font-family: monospace;
+            font-family: "Noto Sans Mono", monospace;
+            font-size: 12px;
             cursor: pointer;
             margin-left: 5px;
             display: flex;
@@ -53,6 +63,7 @@
             background-color: white;
             width: 40px;
             justify-content: center;
+            user-select: none;
         }
         #start[started=no] {
             background-color: #e1ffe1;
@@ -86,7 +97,7 @@
             display: inline;
             animation: streaming steps(1, end) 0.5s infinite;
             content: '';
-            font-family: monospace;
+            font-family: "Noto Sans Mono", monospace;
         }
         @keyframes streaming {
             0%   { content: '\00a0\00a0\00a0' ; }
@@ -102,11 +113,14 @@
             position: fixed;
             margin-right: 900px;
             bottom: 28px;
-            font-size: 45px;
             text-decoration: underline;
             cursor: pointer;
             color: #647964;
             display: none;
+            font-family: "Noto Sans Mono", monospace;
+            font-size: 45px;
+            user-select: none;
+            text-underline-offset: 8px;
         }
         #latch-indicator[latched=yes] {
             display: none;
@@ -173,23 +187,52 @@
         .match {
             background-color: yellow;
         }
+
+        /* Hover latcher above posts on smaller screen */
+        @media (max-width: 950px) {
+            #latch-indicator {
+                left: 7%;
+                z-index: 99;
+                background-color: #8994cc4d;
+                border-radius: 5px;
+                width: 50px;
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 640px) {
+            #explain {
+                font-size: 0.9em;
+                margin: 2px;
+            }
+            #controls {
+                flex-direction: column;
+            }
+            #buttons {
+                display: flex;
+                margin-top: 4px;
+                margin-left: -5px;
+            }
+        }
     </style>
 </head>
 <body>
     <div id="panel">
         <div id="github"><a href="https://github.com/hssm/bluesky-slipstream">[GitHub]</a></div>
         <div id="explain">
-            <div><b>BlueSky Firehose Filter</b></div>
-            <div>This tool lets you view the BlueSky firehose in real time with a filter applied. Filter on multiple keywords separated by a space.</div>
+            <div><b>Bluesky Slipstream</b></div>
+            <div>This tool lets you view the Bluesky firehose in real time. Filter on multiple keywords (inclusive).</div>
         </div>
         <div id="controls">
             <div id="filter">
                 <input id="keywords" type='text' autocomplete="off"></input>
             </div>
-            <div id="start" class="button" started="no">Start</div>
-            <div id="clear" class="button">Clear</div>
-            <div>&nbsp;&nbsp;Posts: <span id='total'>0</span></div>
-            <div id="streaming-indicator" started="no"></div>
+            <div id="buttons">
+                <div id="start" class="button" started="no">Start</div>
+                <div id="clear" class="button">Clear</div>
+                <div>&nbsp;&nbsp;Posts: <span id='total'>0</span></div>
+                <div id="streaming-indicator" started="no"></div>
+            </div>
         </div>
     </div>
 
