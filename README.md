@@ -1,5 +1,5 @@
 # bluesky-slipstream
-[Demo](https://birdbrain.dev/bluesky-slipstream.html)
+[Demo](https://birdbrain.dev/bluesky/slipstream.html)
 
 Yet another BlueSky/ATProto firehose viewer. This one lets you filter by custom keywords and have those keywords highlighted in the results for easier reading.
 
